@@ -1,0 +1,206 @@
+<!--
+Aan assistenten: zie README.assistenten.txt
+-->
+
+
+<project name="practicum" basedir="." default="main">
+    <property name="src.dir"     value="src"/>
+    <property name="report.dir"  value="report"/>
+    <property name="opgave.dir"  value="opgavetekst"/>
+    <property name="build.dir"   value="build"/>
+    <property name="images.dir"  value="images"/>
+    <property name="doc.dir"     value="documentation"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="jar.dir"     value="${build.dir}/jar"/>
+    <property name="lib.dir"     value="lib"/>
+    <property name="libpract.dir" value="libpract"/>
+    <property name="images.dir"  value="images"/>
+    <property name="myexamples.dir" value="myexamples"/>
+    <property name="main-class"  value="gna.ImageCompositor"/>
+    <property name="offsetx"     value="0"/>
+    <property name="offsety"     value="0"/>
+    <property name="md5.empty.report" value="6068915a8b715aa265c217b499d3f309"/>
+    <property name="zipfilename" value="${build.dir}/firstname_lastname_studentnumber.zip"/>
+    
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <!-- Dit depend altijd op clean, anders komt het af en toe voor dat iets
+         breekt omdat een file niet opnieuw gecompileerd wordt. Hiernaar zoeken
+         is typisch een duur tijdverlies. -->
+    <target name="compile" depends="clean, check-libpract-exist">
+        <mkdir dir="${classes.dir}"/>
+        <javac debug="true" debuglevel="lines,vars,source" includeantruntime="false" srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath"/>
+    </target>
+
+    <target name="jar" depends="compile">
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <!-- Voer de main methode uit. -->
+    <target name="run" depends="jar">
+        <java fork="true" classname="${main-class}">
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${jar.dir}/${ant.project.name}.jar"/>
+            </classpath>
+            <arg value="${img1}" />
+            <arg value="${img2}" />
+            <arg value="${offsetx}" />
+            <arg value="${offsety}" />
+            <arg value="${opl}" />
+        </java>
+    </target>
+
+    <!-- Voer de tests van de studenten en de ProvidedTests uit. -->
+    <target name="calltests" depends="compile">
+        <junit printsummary="true" failureproperty="junit.failure" fork="true" forkmode="once">
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${build.dir}/classes"/>
+                <fileset dir="${lib.dir}" includes="**/*.jar"/>
+            </classpath>
+
+            <test name="libpract.CallTests"/>
+
+            <formatter type="plain" usefile="false" />
+       </junit>
+       <fail if="junit.failure" message="Unit test(s) failed."/>
+    </target>   
+
+    <!-- Voer de tests van de studenten en de ProvidedTests uit. -->
+    <target name="test" depends="compile">
+        <junit printsummary="true" failureproperty="junit.failure" fork="true" forkmode="once">
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${build.dir}/classes"/>
+                <fileset dir="${lib.dir}" includes="**/*.jar"/>
+            </classpath>
+
+            <test name="libpract.CallTests"/>
+            <test name="libpract.ProvidedTests"/>
+
+            <!-- skipNonTests="true" would be nicer, but that depends on
+                 a recent version of Ant. -->
+            <batchtest>
+                <fileset dir="${src.dir}">
+                    <include name="**/test*" />
+                    <include name="**/Test*" />
+                </fileset>
+            </batchtest>
+           <formatter type="plain" usefile="false" />
+       </junit>
+       <fail if="junit.failure" message="Unit test(s) failed."/>
+    </target>
+
+    <!-- does not depend on "test", because "test" can fail, causing these
+         tests to not end up being executed. -->
+    <target name="modelTest" depends="compile">
+        <junit printsummary="true" failureproperty="junit.failure" fork="true" forkmode="once">
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${build.dir}/classes"/>
+                <fileset dir="${lib.dir}" includes="**/*.jar"/>
+                <fileset dir="../" includes="modelTest.jar"/>
+            </classpath>
+
+            <test name="modelTest.ModelTest"/>
+            <formatter type="plain" usefile="false" />
+       </junit>
+       <fail if="junit.failure" message="Unit test(s) failed."/>
+    </target>
+    
+    <!-- Controleert of report/report.pdf wel bestaat. -->
+    <target name="check-pdf-exist">
+        <pathconvert property="pdf.file.found" setonempty="false" pathsep=" ">
+            <path>
+                <fileset dir="${report.dir}" includes="report.pdf" />
+            </path>
+        </pathconvert>
+        <fail unless="pdf.file.found" message="Kan het bestand report/report.pdf niet vinden."/>
+    </target>
+
+    <!-- Is er een PDF van de opgave, en is deze up to date. -->
+    <target name="check-opgave-ready">
+        <pathconvert property="pdf.file.found" setonempty="false" pathsep=" ">
+            <path>
+                <fileset dir="${opgave.dir}" includes="opgave.pdf" />
+            </path>
+        </pathconvert>
+        <uptodate property="pdf.file.uptodate" srcfile="${opgave.dir}/opgave.tex" targetfile="${opgave.dir}/opgave.pdf"/>
+        <fail unless="pdf.file.found" message="Het bestand opgavetekst/opgave.pdf bestaat niet."/>
+        <fail unless="pdf.file.uptodate" message="Het bestand opgavetekst/opgave.pdf is niet up-to-date."/>
+    </target>
+
+    <target name="check-libpract-exist">
+        <pathconvert property="libpract.file.found" setonempty="false" pathsep=" ">
+            <path>
+                <fileset dir="${lib.dir}" includes="libpract.jar" />
+            </path>
+        </pathconvert>
+        <fail unless="libpract.file.found" message="Kan het bestand lib/libpract.jar niet vinden. Assistenten kunnen in README.assistenten.txt lezen hoe dit gemaakt moet worden."/>
+    </target>
+
+    <target name="documentation">
+        <delete dir="${doc.dir}"/>
+        <javadoc packagenames="libpract.*"
+                sourcefiles="${libpract.dir}/${libpract.dir}/Position.java,${libpract.dir}/${libpract.dir}/Stitch.java"
+                destdir="${doc.dir}"
+                windowtitle="Gegevensstructuren en Algoritmen: Practicum 3">
+        </javadoc>
+    </target>
+
+    <!-- report/report.pdf moet vervangen worden door het verslag van de studenten,
+         deze target checkt of het bestand wel vervangen is. -->
+    <target name="check-pdf-not-replaced" depends="check-pdf-exist">
+        <fail unless="pdf.file.found" message="Kan het bestand report/report.pdf niet vinden."/>
+        <checksum file="report/report.pdf" verifyProperty="property.pdf.md5.empty" property="${md5.empty.report}"/>
+        <condition property="report.is.empty">
+            <istrue value="${property.pdf.md5.empty}"/>
+        </condition>
+        <fail if="report.is.empty" message="Vervang het bestand report/report.pdf door je verslag."/>
+    </target>
+
+    <!-- maakt de zip file die studenten kunnen indienen. -->
+    <target name="release" depends="compile, calltests, check-pdf-exist, check-pdf-not-replaced">
+        <delete file="${zipfilename}" />
+        <zip destfile="${zipfilename}">
+            <zipfileset dir="${src.dir}" includes="**" prefix="src/"/>
+            <zipfileset dir="${lib.dir}" includes="**" prefix="lib/"/>
+            <zipfileset dir="${report.dir}" includes="*.pdf" prefix="report/"/>
+            <zipfileset dir="${myexamples.dir}" includes="**" prefix="myexamples/"/>
+            <zipfileset dir="." includes="build.xml"/>
+        </zip>
+    </target>
+
+    <!-- maakt de zip file die de assistenten op Toledo kunnen posten als opgave. -->
+    <property name="zipToStudents"  value="gna-practicumX-20XX-20XX.zip"/>
+    <target name="releaseToStudents" depends="check-libpract-exist, check-opgave-ready, documentation">
+        <delete file="${zipToStudents}" />
+        <zip destfile="${zipToStudents}">
+            <zipfileset dir="${src.dir}" includes="**" prefix="src/"/>
+            <zipfileset dir="${lib.dir}" includes="**" prefix="lib/"/>
+            <zipfileset dir="${images.dir}" includes="**" prefix="images/"/>
+            <zipfileset dir="${myexamples.dir}" includes="**" prefix="myexamples/"/>
+            <zipfileset dir="opgavetekst/" includes="*.pdf" prefix="opgavetekst/"/>
+            <zipfileset dir="${report.dir}" includes="*.pdf" prefix="report/"/>
+            <zipfileset dir="${doc.dir}" includes="**" prefix="documentation/"/>
+            <zipfileset dir="." includes="build.xml"/>
+        </zip>
+    </target>
+
+    
+    <target name="main" depends="clean,run"/>
+
+</project>
+
