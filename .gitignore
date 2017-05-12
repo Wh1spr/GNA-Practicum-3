@@ -1,0 +1,7 @@
+apache-ant-1.9.6-bin.zip
+apache-ant-1.9.6
+-ant-1.9.6
+local
+.DS_Store
+build
+*.command

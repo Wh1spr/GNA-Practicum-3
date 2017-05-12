@@ -1,16 +1,22 @@
 package gna;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Stack;
 
 import libpract.*;
+
 
 /**
  * Implement the methods stitch, seam and floodfill.
  */
 public class Stitcher
-{
+{	
 	/**
 	 * Return the sequence of positions on the seam. The first position in the
 	 * sequence is (0, 0) and the last is (width - 1, height - 1). Each position
@@ -39,7 +45,65 @@ public class Stitcher
 	 *   the illustration above.
 	 */
 	public List<Position> seam(int[][] image1, int[][] image2) {
-		throw new RuntimeException("not implemented yet");
+		Comparator<State> comp = new Comparator<State>(){
+
+			@Override
+			public int compare(State o1, State o2) {
+				return Integer.compare(o1.getTotalCost(), o2.getTotalCost());
+			}
+		};
+		
+		PriorityQueue<State> pQueue = new PriorityQueue<State>(comp);
+		HashMap<Position, State> queue = new HashMap<Position, State>();
+		HashSet<Position> closed = new HashSet<Position>();
+		
+		int height = image1.length;
+		int width = image1[0].length;
+		Position start = new Position(0,0);
+		Position finish = new Position(width - 1, height - 1);
+		
+		State init = new State(null, start, image1[0][0], image2[0][0]);
+		pQueue.add(init);
+		queue.put(start, init);
+		
+		while(!pQueue.peek().getPosition().equals(finish)) {
+			State current = pQueue.poll();
+			queue.remove(current.getPosition());
+			
+			if (!closed.contains(current.getPosition())) {
+				//posities die nog niet closed zijn
+				closed.add(current.getPosition());
+				
+				for (Position pos : getNeighbors(current.getPosition(), height, width)) {
+					State neighbor = new State(current, pos, image1[pos.getY()][pos.getX()],image2[pos.getY()][pos.getX()]);
+					if (!closed.contains(pos)) {
+						if (queue.containsKey(pos)) {
+							//Deze neighbor zit al in de queue, nu kijken of het pad naar deze neighbor 
+							//korter is dan wat er al in de queue zit.
+							if (neighbor.getTotalCost() < queue.get(pos).getTotalCost()) {
+								//pad is korter, vervangen in de queue
+								queue.put(pos, neighbor);
+								pQueue.remove(queue.get(pos));
+								pQueue.add(neighbor);
+							}
+						} else {
+							queue.put(pos, neighbor);
+							pQueue.add(neighbor);
+						}
+					}
+				}
+			}
+		}
+		
+		State end = pQueue.poll();
+		ArrayList<Position> seam = new ArrayList<Position>();
+		while(end != null) {
+			seam.add(end.getPosition());
+			end = end.getPrevious();
+		}
+		
+		Collections.reverse(seam);
+		return seam;
 	}
 
 	/**
@@ -53,7 +117,33 @@ public class Stitcher
 	 * to check whether your implementation does this properly.
 	 */
 	public void floodfill(Stitch[][] mask) {
-		throw new RuntimeException("not implemented yet");
+		int height = mask.length;
+		int width = mask[0].length;
+
+		HashSet<Position> closed = new HashSet<Position>();
+		Stack<Position> todo = new Stack<Position>();
+		
+		Position start = new Position(0,height-1); //linksonder beginnen met IMAGE1 te vullen
+		
+		todo.add(start);
+		while(!todo.isEmpty()) {
+			Position current = todo.pop();
+			mask[current.getY()][current.getX()] = Stitch.IMAGE1;
+			closed.add(current);
+			for (Position e : getNonDiagonalNeighbors(current, height, width)) {
+				if (!closed.contains(e)) {
+					if (mask[e.getY()][e.getX()] != Stitch.SEAM) {
+						todo.add(e);
+					}
+				}
+			}
+		}
+		for (int i = 0; i < height; i++)
+			for (int j = 0; j < width; j++)
+				if (mask[i][j] != Stitch.SEAM && mask[i][j] != Stitch.IMAGE1) 
+					mask[i][j] = Stitch.IMAGE2;
+		
+		
 	}
 
 	/**
@@ -70,19 +160,40 @@ public class Stitcher
 	 * image1 and image2 are both non-null and have equal dimensions.
 	 */
 	public Stitch[][] stitch(int[][] image1, int[][] image2) {
-		// use seam and floodfill to implement this method
-		throw new RuntimeException("not implemented yet");
-	}
-	private Comparator<Position> comp = new Comparator<Position>(){
-
-		@Override
-		public int compare(Position o1, Position o2) {
-			// TODO Auto-generated method stub
-			return 0;
+		List<Position> seam = seam(image1,image2);
+		Stitch[][] result = new Stitch[image1.length][image1[0].length];
+		
+		for (Position pos : seam) {
+			result[pos.getY()][pos.getX()] = Stitch.SEAM;
 		}
-	};
-	private PriorityQueue<Position> pQueue = new PriorityQueue<Position>(comp);
-
+		
+		floodfill(result);
+		return result;
+	}
+	
+	public static HashSet<Position> getNeighbors(Position pos, int height, int width) {
+		HashSet<Position> neighbors = new HashSet<Position>();
+		
+		for (int x = pos.getX()-1; x <= pos.getX()+1; x++) {
+			for (int y = pos.getY()-1; y <= pos.getY()+1; y++) {
+				if (x >= 0 && y >= 0 && x < width && y < height && !(x == pos.getX() && y == pos.getY())) {
+					neighbors.add(new Position(x,y));
+				}
+			}
+		}
+		return neighbors;
+	}
+	
+	public static HashSet<Position> getNonDiagonalNeighbors(Position pos, int height, int width) {
+		HashSet<Position> neighbors = new HashSet<Position>();
+		
+		if (pos.getX() != 0) neighbors.add(new Position(pos.getX()-1, pos.getY()));
+		if (pos.getY() != 0) neighbors.add(new Position(pos.getX(), pos.getY()-1));
+		if (pos.getX() != width-1) neighbors.add(new Position(pos.getX()+1, pos.getY()));
+		if (pos.getY() != height-1) neighbors.add(new Position(pos.getX(), pos.getY()+1));
+		
+		return neighbors;
+	}
 }
 
 
