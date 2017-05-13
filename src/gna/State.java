@@ -9,9 +9,9 @@ public class State {
 	private int currentCost;
 	private int totalCost;
 	
-	public State(State previous, Position pos, int firstColor, int secondColor) {
+	public State(State previous, Position pos, int cost) {
 		this.previous = previous;
-		this.currentCost = ImageCompositor.pixelSqDistance(firstColor, secondColor);
+		this.currentCost = cost;
 		if (this.previous != null) {
 			this.totalCost = this.getPrevious().getTotalCost() + this.currentCost;
 		} else {this.totalCost = this.currentCost;}

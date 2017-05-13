@@ -62,7 +62,7 @@ public class Stitcher
 		Position start = new Position(0,0);
 		Position finish = new Position(width - 1, height - 1);
 		
-		State init = new State(null, start, image1[0][0], image2[0][0]);
+		State init = new State(null, start, ImageCompositor.pixelSqDistance(image1[0][0], image2[0][0]));
 		pQueue.add(init);
 		queue.put(start, init);
 		
@@ -75,7 +75,7 @@ public class Stitcher
 				closed.add(current.getPosition());
 				
 				for (Position pos : getNeighbors(current.getPosition(), height, width)) {
-					State neighbor = new State(current, pos, image1[pos.getY()][pos.getX()],image2[pos.getY()][pos.getX()]);
+					State neighbor = new State(current, pos, ImageCompositor.pixelSqDistance(image1[pos.getY()][pos.getX()],image2[pos.getY()][pos.getX()]));
 					if (!closed.contains(pos)) {
 						if (queue.containsKey(pos)) {
 							//Deze neighbor zit al in de queue, nu kijken of het pad naar deze neighbor 
