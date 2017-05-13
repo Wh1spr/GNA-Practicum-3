@@ -27,7 +27,12 @@
 \newpage
 
 \section*{Inleiding}
+Het Image Compositing algoritme is een algoritme dat twee afbeeldingen zal samenvoegen. Zo worden er meerdere varianten gebruikt om meerdere
+afbeeldingen aan elkaar te hechten tot een panoramafoto. Hierbij is het belangrijk dat de overgang tussen de afbeeldingen zo weining mogelijk opvalt.
 
+Om dit te verwezelijken hebben we 2 algoritmes nodig: seam() en floodfill().\\
+Seam() zal met behulp van Dijkstra's kortste pad algoritme en een afstandsfunctie de grens bepalen tussen de twee afbeeldingen zodat de grens zo weinig mogelijk opvalt.
+\\Floodfill() zal dan de nieuwe afbeelding invullen rekening houdend met de grens. De afbeeldingen worden dus aan elkaar gehecht.
 \newpage
 \section{Afbeeldingen als een graaf}
 Gegeven zijn onderstaande afbeeldingen met hun RGB-waarden.
@@ -54,9 +59,11 @@ We geven iedere pixel van de resulterende afbeelding een naam om de grafe te ver
   \hline
 \end{tabular}
 
+Hierbij is de totale kost gelijk aan de som van de \textit{pixeldistances} van de pixels op het pad. Het korste pad, aangeduid in het rood, heeft dus een kost gelijk aan $ 49 + 4 + 1 + 64 = 118 $.
+
 \begin{figure}[h!]
 \centering
-\includegraphics[scale=0.4]{Grafe.png}
+\includegraphics[scale=0.5]{Grafe.png}
 \caption{Grafe met het kortste pad aangeduid}
 \label{fig:Graph}
 \end{figure}
@@ -81,7 +88,40 @@ is aan 0, zal de PriorityQueue alle paden als \textquotedbl even lang\textquoted
 
 \section{Tijdscomplexiteit}
 
+\newpage
+\section{Seam en complexe vormen}
+Om te voorkomen dat de seam complexere vormen aanneemt kunnen we een simpele aanpassing maken. Voor de volgende node te vinden in het algoritme
+van Dijkstra gaan we kijken naar de buren van een bepaalde node. Hier kunnen we onze aanpassing maken door enkel de buren die zich rechts en/of onder
+die node bevinden te bekijken. We maken dus een gerichte graaf waarbij alle bogen naar rechts en/of naar onder gericht zijn.
 
+\section{Langste niet-cyclische pad}
+Als we het langste niet-cyclishe pad nemen als de grens tussen de twee afbeeldingen in plaats van het kortste pad, dan zal de grens de hele
+afbeelding innemen. Het visuele resultaat hangt nu dus af van het algoritme dat de afbeeldingen samenbrengt m.b.v. het masker. Dat masker bestaat
+uit enkel de grens en in onze implementatie wordt de grens vervangen met de tweede afbeelding. Het resultaat zal dus de originele tweede afbeelding zijn als
+de twee afbeeldingen even groot zijn en er geen offsets gebruikt zijn.
 
+\newpage
+\section{Extra voorbeelden}
+Onderstaande afbeeldingen zijn nog enkele extra, grappige afbeeldingen van de resultaten van het programma.
+
+In dit eerste resultaat is het duidelijk dat een verschillend gekleurde lijn duidelijk nodig is.
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.2]{../myexamples/meme1.png}
+\includegraphics[scale=0.2]{../myexamples/meme2.png}
+\includegraphics[scale=0.2]{../myexamples/meme-output.png}
+\caption{meme1.png, meme2.png en meme-output.png}
+\label{fig:Meme}
+\end{figure}
+
+Die lijn heb is hier in het groen toegevoegd.
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.2]{../myexamples/meme1a.png}
+\includegraphics[scale=0.2]{../myexamples/meme2a.png}
+\includegraphics[scale=0.2]{../myexamples/meme-a-output.png}
+\caption{meme1a.png, meme2a.png en meme-a-output.png}
+\label{fig:MemeA}
+\end{figure}
 
 \end{document}
