@@ -45,16 +45,16 @@ public class Stitcher
 	 *   the illustration above.
 	 */
 	public List<Position> seam(int[][] image1, int[][] image2) {
-		Comparator<State> comp = new Comparator<State>(){
+		Comparator<Situation> comp = new Comparator<Situation>(){
 
 			@Override
-			public int compare(State o1, State o2) {
+			public int compare(Situation o1, Situation o2) {
 				return Integer.compare(o1.getTotalCost(), o2.getTotalCost());
 			}
 		};
 		
-		PriorityQueue<State> pQueue = new PriorityQueue<State>(comp);
-		HashMap<Position, State> queue = new HashMap<Position, State>();
+		PriorityQueue<Situation> pQueue = new PriorityQueue<Situation>(comp);
+		HashMap<Position, Situation> queue = new HashMap<Position, Situation>(); // gemakkelijker en sneller dan de situation.getPosition() op te vragen voor iedere situation in de lijst
 		HashSet<Position> closed = new HashSet<Position>();
 		
 		int height = image1.length;
@@ -62,12 +62,12 @@ public class Stitcher
 		Position start = new Position(0,0);
 		Position finish = new Position(width - 1, height - 1);
 		
-		State init = new State(null, start, ImageCompositor.pixelSqDistance(image1[0][0], image2[0][0]));
+		Situation init = new Situation(null, start, ImageCompositor.pixelSqDistance(image1[0][0], image2[0][0]));
 		pQueue.add(init);
 		queue.put(start, init);
 		
 		while(!pQueue.peek().getPosition().equals(finish)) {
-			State current = pQueue.poll();
+			Situation current = pQueue.poll();
 			queue.remove(current.getPosition());
 			
 			if (!closed.contains(current.getPosition())) {
@@ -75,7 +75,7 @@ public class Stitcher
 				closed.add(current.getPosition());
 				
 				for (Position pos : getNeighbors(current.getPosition(), height, width)) {
-					State neighbor = new State(current, pos, ImageCompositor.pixelSqDistance(image1[pos.getY()][pos.getX()],image2[pos.getY()][pos.getX()]));
+					Situation neighbor = new Situation(current, pos, ImageCompositor.pixelSqDistance(image1[pos.getY()][pos.getX()],image2[pos.getY()][pos.getX()]));
 					if (!closed.contains(pos)) {
 						if (queue.containsKey(pos)) {
 							//Deze neighbor zit al in de queue, nu kijken of het pad naar deze neighbor 
@@ -95,7 +95,7 @@ public class Stitcher
 			}
 		}
 		
-		State end = pQueue.poll();
+		Situation end = pQueue.poll();
 		ArrayList<Position> seam = new ArrayList<Position>();
 		while(end != null) {
 			seam.add(end.getPosition());

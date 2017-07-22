@@ -1,16 +1,12 @@
 \documentclass{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[dutch]{babel}
 \usepackage[square,sort,comma,numbers]{natbib}
 \usepackage[hyphens]{url}
 \usepackage{hyperref}
-\setlength
-{\parindent}
-{0pt}
-\setlength
-{\parskip}
-{1.5ex plus 0.5ex minus 0.2ex}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[dutch]{babel}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.5ex plus 0.5ex minus 0.2ex}
 \usepackage[margin=3.5cm]{geometry}
 
 
@@ -82,17 +78,37 @@ twee afbeeldingen waar enkel de kleur blauw in voorkomt. In dit geval zal het de
 Dit komt omdat in zo'n afbeeldingenpaar de kost van een pixel altijd gelijk is aan 0, en dus is het gewicht van eenderwelk pad 0. Hierdoor gaat
 het algoritme van Dijkstra zoeken naar een kortste pad in aantal pixels, omdat het stopt zodra het de eind-node heeft gevonden.
 
-Het kan echter ook zijn dat dit pad zeer lang is. Dit hangt af van de implementatie van het algoritme. Omdat het gewicht van ieder pad gelijk
+Het kan echter ook zijn dat dit pad zeer lang is, dit als we niet de variant van Dijkstra nemen die stopt als de eind- node is gevonden. Omdat het gewicht van ieder pad gelijk
 is aan 0, zal de PriorityQueue alle paden als \textquotedbl even lang\textquotedbl  zien, alhoewel dat niet altijd zo is. Zo kan het dus ook zijn dat een bepaald
 (puur blauw) afbeeldingenpaar een zeer lange uitvoeringstijd heeft omdat de grens voortdurend heen en weer gaat.
 
 \section{Tijdscomplexiteit}
+Bij een afbeelding met als grootte N*1 of 1*N zal de seam de volledige afbeelding innemen. De lengte van dat pad is dus N.
+
+Eerst wordt de methode \textit{seam()} opgeroepen, die voor iedere pixel de buren ervan een nieuwe edge toevoegen aan de grafe.
+In dit geval zijn er maar 2 buren, dus we hebben al $2*N$. Daarna moet Dijkstra, met een tijdscomplexiteit van $ log (V) * (E + V) $, het korste pad bepalen.
+We hebben $E=2*N$ edges en $V=N$ vertices, dus we bekomen $log(N)*(3N)$. Deze seam wordt ook nog aan een lijst toegevoegd. Aangezien er $N$ edges op het pad liggen, is de tijdscomplexiteit van \textit{seam()} gelijk aan $N+3N*log(N)$ of $\sim3N*log(N)$.
+
+Bij \textit{floodfill()} wordt iedere pixel die niet op de seam ligt maar 1 enkele keer bezocht, dus de tijdscomplexiteit van \textit{floodfill()} is $N-N=0$, aangezien iedere pixel deel is van de seam.
+
+Samen is de tijdscomplexiteit dus gelijk aan de tijdscomplexiteit van \textit{seam()}, \newline namelijk $\sim3N*log(N)$.
+
+Als we dit nu toepassen op een afbeelding met als grootte NxN, krijgen we het volgende. \newline
+Voor \textit{seam()}: Iedere pixel heeft 8 buren, dus $E=8*N^2$ edges en $V=N^2$ vertices. De tijdscomplexiteit voor Dijkstra is dus $~18*N^2 *log(N)$.\newline
+Voor \textit{floodfill()} krijgen we een tijdscomplexiteit van $\sim N^2$. \newline
+Als we deze nu combineren krijgen we in totaal een tijdscomplexiteit van $N^2 + 18*N^2 *log(N)$ of $\sim18*N^2*log(N)$.
+
+Dijkstra zal dus even snel zijn in functie van het aantal pixels als de afbeelding NxN groot is ipv 1xN of Nx1.
+
+
+
+
 
 \newpage
 \section{Seam en complexe vormen}
 Om te voorkomen dat de seam complexere vormen aanneemt kunnen we een simpele aanpassing maken. Voor de volgende node te vinden in het algoritme
 van Dijkstra gaan we kijken naar de buren van een bepaalde node. Hier kunnen we onze aanpassing maken door enkel de buren die zich rechts en/of onder
-die node bevinden te bekijken. We maken dus een gerichte graaf waarbij alle bogen naar rechts en/of naar onder gericht zijn.
+die node bevinden te bekijken. We maken dus een gerichte graaf waarbij alle bogen naar rechts en/of naar onder gericht zijn, i.p.v. naar alle buren van een pixel.
 
 \section{Langste niet-cyclische pad}
 Als we het langste niet-cyclishe pad nemen als de grens tussen de twee afbeeldingen in plaats van het kortste pad, dan zal de grens de hele
