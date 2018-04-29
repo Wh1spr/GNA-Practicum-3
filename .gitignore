@@ -5,3 +5,4 @@ local
 .DS_Store
 build
 *.command
+/bin/
